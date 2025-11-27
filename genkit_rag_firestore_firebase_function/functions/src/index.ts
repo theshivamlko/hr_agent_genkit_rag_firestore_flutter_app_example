@@ -74,7 +74,7 @@ const ragFlow = ai.defineFlow({
 
 
         // Chunking using Split method and create a Document List
-        const documentList: Document[] = await ai.run("chunking", async () => {
+        const chunksList: Document[] = await ai.run("chunking", async () => {
 
             const chunkedData = chunk(pdfText, {
                 maxLength: 5000,
@@ -85,21 +85,28 @@ const ragFlow = ai.defineFlow({
             });
             console.log('Chunked content length ', chunkedData.length);
 
-            let documents = [];
+            return chunkedData;
+        })
 
-            for (let i = 0; i < chunkedData.length; i++) {
+
+
+        const documentsList: Document[] = await ai.run("embeddings", async () => {
+
+          let documents = [];
+
+            for (let i = 0; i < chunksList.length; i++) {
                 console.log(i);
 
                 const embedding = (await ai.embed({
                     embedder: vertexAI.embedder('text-embedding-005'),
-                    content: chunkedData[i],
+                    content: chunksList[i],
                 }))[0].embedding;
 
                 await new Promise((resolve) => setTimeout(resolve, 10000));
 
 
                 const document: DocumentData = {
-                    content: chunkedData[i],
+                    content: chunksList[i],
                     embedding: FieldValue.vector(embedding),
                     timeStamp: FieldValue.serverTimestamp()
                 };
@@ -107,21 +114,22 @@ const ragFlow = ai.defineFlow({
 
             }
 
-
-            console.log('Documents  length ', documents.length);
-
             return documents;
         })
 
+
         // Update Database
         const batch = firestore.batch();
-        documentList.forEach((doc) => {
+        documentsList.forEach((doc) => {
             const ref = firestore.collection(collectionName).doc();
             batch.create(ref, doc);
         });
         await batch.commit();
 
         console.log('===> Database Updates');
+
+
+        
         console.log('===> Indexing Done');
 
 
