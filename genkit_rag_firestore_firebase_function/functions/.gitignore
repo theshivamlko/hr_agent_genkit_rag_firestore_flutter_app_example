@@ -9,5 +9,6 @@ typings/
 node_modules/
 *.local
 gen-lang-client-0291573737-2494b74f678a.json
+classproject-479906-239b97d66768.json
 package-lock.json
 .genkit

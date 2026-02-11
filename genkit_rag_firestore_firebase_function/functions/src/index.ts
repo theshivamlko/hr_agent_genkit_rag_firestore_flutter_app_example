@@ -129,7 +129,7 @@ const ragFlow = ai.defineFlow({
         console.log('===> Database Updates');
 
 
-        
+        // Run CLI
         console.log('===> Indexing Done');
 
 
@@ -137,7 +137,7 @@ const ragFlow = ai.defineFlow({
     }
 );
 
-
+// Retrieval 
 const retrieveResult = ai.defineFlow({
     name: "retrieveResult",
     inputSchema: z.string(),
@@ -162,17 +162,25 @@ const retrieveResult = ai.defineFlow({
         },
     });
 
-    let resultAsText="";
+    const resultAsJson = docs.map((doc, i) => ({
+        page: i + 1,
+        text: doc.text
+    }));
 
-    for (let i = 0; i < docs.length; i++) {
-        resultAsText+=`Page ${i+1}: ${docs[i].text} \n\n `
-    }
-
-    console.log(resultAsText);
+    console.log(JSON.stringify(resultAsJson, null, 2));
 
 
+    // Generate response using retrieved results
     const prompt =
-        `Be a helpful assistant and Answer user query in simple as informative , short and only relevant answer, \n User Query: ${input} \n Context ${resultAsText}`;
+        `
+        Be a helpful assistant and Answer user query in simple as informative , 
+        short and only relevant answer for user, 
+
+        \n User Query: ${input.toString()} \n Context ${JSON.stringify(resultAsJson, null, 2)}
+        `;
+         console.log(prompt);
+
+        
     const { response  } = ai.generateStream({
         model: vertexAI.model('gemini-2.5-pro'),
         prompt: prompt,
